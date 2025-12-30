@@ -1,0 +1,50 @@
+pandas
+numpy
+scikit-learn
+joblib
+matplotlib
+pyqt6
+xgboost
+imbalanced-
+
+
+
+python -m pip install PyQt6
+
+python -m ensurepip --upgrade
+
+python -m pip install pandas
+
+python -c "import pandas as pd; print(pd.__version__)" 
+
+python -m pip install pandas numpy scikit-learn joblib xgboost
+
+python -m pip install imbalanced-learn
+
+python -m pip uninstall -y scikit-learn imbalanced-learn
+
+python -m pip install matplotlib
+
+python -m pip install reportlab
+
+python -m pip install imbalanced-learn
+
+------------------------------------------------
+python -m pip uninstall -y scikit-learn imbalanced-learn
+
+python -m pip uninstall -y numpy
+---------------------------------------------------------------
+
+python -m pip install numpy==2.0.2
+python -m pip install scipy
+python -m pip install scikit-learn==1.6.1
+python -m pip install imbalanced-learn==0.14.0
+
+python -m pip install --force-reinstall xgboost
+
+-----------------------------
+python -m pip uninstall -y scikit-learn imbalanced-learn
+python -m pip uninstall -y numpy
+
+git config --global user.name "Tu Nombre Completo"
+git config --global user.email "tucorreo@email.com"
