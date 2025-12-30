@@ -48,3 +48,10 @@ python -m pip uninstall -y numpy
 
 git config --global user.name "Tu Nombre Completo"
 git config --global user.email "tucorreo@email.com"
+
+COMO SUBIR CAMBIOS
+PASO 1
+git status
+git add .
+git commit -m "Mensaje sobre le cambio"
+git push origin main
