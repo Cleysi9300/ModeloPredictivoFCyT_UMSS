@@ -106,7 +106,7 @@ class TabModelo(QWidget):
             QMessageBox.critical(self, "Error", str(e))
     
     # Cargar modelo y datos
-     def cargar_artifactos(self):
+    def cargar_artifactos(self):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_path = os.path.join(base_dir, "data", "dataset_eda.csv")
         self.df_ref = pd.read_csv(data_path)

@@ -12,6 +12,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Sistema de Predicción Universitaria")
         self.setGeometry(100, 100, 1200, 750)
         self.tabs = QTabWidget()
+        
+        
              
         self.tab_modelo = TabModelo()
         self.tab_perfil = TabPerfilEst()
