@@ -37,9 +37,7 @@ NUMERICAS_MODELO = {
     "MAYOR_EDAD",
     "MIGRA_UNIVERSIDAD",
     "TASA_APR_COLEGIO",
-
 }
-
 
 class TabModelo(QWidget):
     def __init__(self):
@@ -79,31 +77,56 @@ class TabModelo(QWidget):
         self.setLayout(self.main_layout)
         self.aplicar_estilos()
 
+
+    def predecir(self):
+        try:
+            datos = {}
+            for col, widget in self.inputs.items():
+                if widget.currentIndex() == -1:
+                    raise ValueError(f"Seleccione un valor para {col}")               
+                if col in ["MAYOR_EDAD", "MIGRA_UNIVERSIDAD"]:
+                    datos[col] = int(widget.currentData())
+                elif col in NUMERICAS_MODELO:
+                    datos[col] = float(widget.currentText())
+                else:
+                    datos[col] = widget.currentText()            
+            datos["TASA_APR_COLEGIO"] = float(self.tasa_actual)
+            # Construir DataFrame
+            df = pd.DataFrame([datos])
+            df = df.reindex(columns=self.columnas_modelo, fill_value=0)            
+            pred = self.modelo.predict(df)[0]
+            proba = self.modelo.predict_proba(df)[0][1]
+            self.mostrar_resultado(pred, proba)            
+            if hasattr(self, "tab_perfil") and hasattr(self, "tabs_widget"):
+                self.tab_perfil.actualizar_perfil(datos, proba)                
+                self.tabs_widget.setCurrentIndex(
+                    self.tabs_widget.indexOf(self.tab_perfil)
+                )
+        except Exception as e:
+            QMessageBox.critical(self, "Error", str(e))
     
     # Cargar modelo y datos
-    
-    def cargar_artifactos(self):
+     def cargar_artifactos(self):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_path = os.path.join(base_dir, "data", "dataset_eda.csv")
         self.df_ref = pd.read_csv(data_path)
-
         self.tasa_por_colegio = (
             self.df_ref
             .groupby("NOMBRE_COLEGIO")["RESULTADO_FINAL"]
             .apply(lambda x: (x == "APR").mean())
             .to_dict()
         )
-
         self.modelo = joblib.load("model/modelo_XGBOOST.joblib")
-
         with open("model/columnas_modelo.pkl", "rb") as f:
             self.columnas_modelo = pickle.load(f)
-
         with open("model/cat_features.pkl", "rb") as f:
             self.cat_features = pickle.load(f)
-
         self.tasa_actual = 0.0
 
+    
+    
+    
+    
     
     # Crear inputs
     
@@ -202,48 +225,7 @@ class TabModelo(QWidget):
    
     # Predicción
    
-    def predecir(self):
-        try:
-            datos = {}
-
-            for col, widget in self.inputs.items():
-                if widget.currentIndex() == -1:
-                    raise ValueError(f"Seleccione un valor para {col}")
-
-                
-                if col in ["MAYOR_EDAD", "MIGRA_UNIVERSIDAD"]:
-                    datos[col] = int(widget.currentData())
-
-                elif col in NUMERICAS_MODELO:
-                    datos[col] = float(widget.currentText())
-
-                else:
-                    datos[col] = widget.currentText()
-
-            
-            datos["TASA_APR_COLEGIO"] = float(self.tasa_actual)
-
-            # Construir DataFrame
-            df = pd.DataFrame([datos])
-            df = df.reindex(columns=self.columnas_modelo, fill_value=0)
-
-            
-            pred = self.modelo.predict(df)[0]
-            proba = self.modelo.predict_proba(df)[0][1]
-
-            self.mostrar_resultado(pred, proba)
-
-            
-            if hasattr(self, "tab_perfil") and hasattr(self, "tabs_widget"):
-                self.tab_perfil.actualizar_perfil(datos, proba)
-
-                
-                self.tabs_widget.setCurrentIndex(
-                    self.tabs_widget.indexOf(self.tab_perfil)
-                )
-
-        except Exception as e:
-            QMessageBox.critical(self, "Error", str(e))
+    
 
     
     # Mostrar resultado

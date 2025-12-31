@@ -174,7 +174,7 @@ class TabEvaluarEsts(QWidget):
         pred = self.modelo.predict(X)
         proba = self.modelo.predict_proba(X)[:, 1]
 
-        df["PREDICCION"] = np.where(pred == 1, "APROBADO", "NO APROBADO")
+        df["PREDICCION"] = np.where(pred == 1, "FUERA DE RIESGO","EN RIESGO")
         df["PROBABILIDAD"] = proba
 
         self.df_resultados = df
@@ -297,3 +297,4 @@ class TabEvaluarEsts(QWidget):
         self.btn_cargar.setEnabled(True)
         QMessageBox.critical(self, "Error", mensaje)
 
+    

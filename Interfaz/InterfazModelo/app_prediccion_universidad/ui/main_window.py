@@ -2,21 +2,38 @@ from PyQt6.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QTabWidget
 )
 
-from ui.tab_eda import TabEDA
 from ui.tab_modelo import TabModelo
 from ui.tab_perfil_est import TabPerfilEst
 from ui.tab_evaluar_ests import TabEvaluarEsts
 
-
 class MainWindow(QMainWindow):
     def __init__(self):
-        super().__init__()
-        
+        super().__init__()        
         self.setWindowTitle("Sistema de Predicción Universitaria")
         self.setGeometry(100, 100, 1200, 750)
-
         self.tabs = QTabWidget()
-      
+             
+        self.tab_modelo = TabModelo()
+        self.tab_perfil = TabPerfilEst()
+        self.tab_evaluar = TabEvaluarEsts()
+        
+        # Agregar pestañas         
+        self.tabs.addTab(self.tab_modelo, "Modelo Predictivo")
+        self.tabs.addTab(self.tab_perfil, "Perfil Estadístico")
+        self.tabs.addTab(self.tab_evaluar, "Evaluación Masiva")
+       
+        # Comunicación entre pestañas
+        
+        self.tab_modelo.tab_perfil = self.tab_perfil
+        self.tab_modelo.tab_widget = self.tabs
+        
+        # Layout central
+        
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.addWidget(self.tabs)
+
+        self.setCentralWidget(container)
         self.tabs.setStyleSheet("""
             QWidget {
                 font-family: "Segoe UI";
@@ -64,31 +81,4 @@ class MainWindow(QMainWindow):
                 color: white;
             }
         """)
-
-      
-        self.tab_eda = TabEDA()
-        self.tab_modelo = TabModelo()
-        self.tab_perfil = TabPerfilEst()
-        self.tab_evaluar = TabEvaluarEsts()
-        
-        # Agregar pestañas 
-        
-        self.tabs.addTab(self.tab_eda, "EDA")
-        self.tabs.addTab(self.tab_modelo, "Modelo Predictivo")
-        self.tabs.addTab(self.tab_perfil, "Perfil Estadístico")
-        self.tabs.addTab(self.tab_evaluar, "Evaluación Masiva")
-       
-        # Comunicación entre pestañas
-        
-        self.tab_modelo.tab_perfil = self.tab_perfil
-        self.tab_modelo.tab_widget = self.tabs
-        
-        # Layout central
-        
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.addWidget(self.tabs)
-
-        self.setCentralWidget(container)
-
 

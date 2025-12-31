@@ -35,12 +35,17 @@ python -m pip uninstall -y scikit-learn imbalanced-learn
 python -m pip uninstall -y numpy
 ---------------------------------------------------------------
 
+python -m pip install PyQt6
+python -m pip install pandas
 python -m pip install numpy==2.0.2
 python -m pip install scipy
 python -m pip install scikit-learn==1.6.1
 python -m pip install imbalanced-learn==0.14.0
-
 python -m pip install --force-reinstall xgboost
+python -m pip install matplotlib
+python -m pip install openpyxl  
+
+python version 3.11.1
 
 -----------------------------
 python -m pip uninstall -y scikit-learn imbalanced-learn
