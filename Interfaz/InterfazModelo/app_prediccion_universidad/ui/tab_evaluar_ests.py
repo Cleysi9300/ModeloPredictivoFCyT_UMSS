@@ -187,7 +187,7 @@ class TabEvaluarEsts(QWidget):
 
         columnas = [
             "SEXO", "EDAD", "NOMBRE_COLEGIO",
-            "PREDICCION", "PROBABILIDAD", "Perfil"
+            "PREDICCION", "PROBABILIDAD", "PERFIL"
         ]
 
         self.tabla.setRowCount(len(df))
@@ -204,9 +204,10 @@ class TabEvaluarEsts(QWidget):
                         QPushButton {
                             background-color: #0B4F95;
                             color: white;
-                            border-radius: 6px;
-                            padding: 4px 8px;
+                            border-radius: 8px;
+                            padding: 6px 14px;
                             font-weight: bold;
+                            font-size: 12px;
                         }
                         QPushButton:hover {
                             background-color: #4A90E2;
@@ -227,11 +228,13 @@ class TabEvaluarEsts(QWidget):
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
                 # Colorear predicción
+                # Colorear predicción (RIESGO)
                 if col == "PREDICCION":
-                    if valor == "APROBADO":
+                    if valor == "FUERA DE RIESGO":
                         item.setForeground(Qt.GlobalColor.darkGreen)
                     else:
                         item.setForeground(Qt.GlobalColor.red)
+
 
                 self.tabla.setItem(i, j, item)
 
@@ -296,5 +299,104 @@ class TabEvaluarEsts(QWidget):
     def mostrar_error(self, mensaje):
         self.btn_cargar.setEnabled(True)
         QMessageBox.critical(self, "Error", mensaje)
+    def aplicar_estilos(self):
+        self.setStyleSheet("""
+            /* ===============================
+            CARD PRINCIPAL
+            =============================== */
+            QFrame#card {
+                background-color: #FFFFFF;
+                border-radius: 16px;
+                padding: 24px;
+                border: 2px solid #0B4F95;
+            }
+
+            /* ===============================
+            TÍTULOS
+            =============================== */
+            QLabel {
+                font-size: 14px;
+                color: #0B4F95;
+            }
+
+            /* ===============================
+            BOTÓN PRINCIPAL
+            =============================== */
+            QPushButton {
+                background-color: #0B4F95;
+                color: white;
+                border-radius: 10px;
+                padding: 10px 16px;
+                font-weight: bold;
+                font-size: 14px;
+            }
+
+            QPushButton:hover {
+                background-color: #4A90E2;
+            }
+
+            QPushButton:disabled {
+                background-color: #A0A0A0;
+                color: #EAEAEA;
+            }
+
+            /* ===============================
+            TABLA
+            =============================== */
+            QTableWidget {
+                background-color: #FFFFFF;
+                border: 1px solid #DADADA;
+                gridline-color: #E0E0E0;
+                selection-background-color: #E6F0FA;
+                selection-color: #000000;
+                alternate-background-color: #F7F9FC;
+                font-size: 13px;
+            }
+
+            QTableWidget::item {
+                padding: 6px;
+            }
+
+            QTableWidget::item:selected {
+                background-color: #E6F0FA;
+                color: #000000;
+            }
+
+            /* ===============================
+            CABECERAS DE TABLA
+            =============================== */
+            QHeaderView::section {
+                background-color: #F0F4F8;
+                color: #0B4F95;
+                font-weight: bold;
+                padding: 8px;
+                border: none;
+                border-bottom: 2px solid #0B4F95;
+            }
+
+            QHeaderView::section:first {
+                border-top-left-radius: 8px;
+            }
+
+            QHeaderView::section:last {
+                border-top-right-radius: 8px;
+            }
+
+            /* ===============================
+            BOTÓN "VER PERFIL" EN TABLA
+            =============================== */
+            QTableWidget QPushButton {
+                background-color: #0B4F95;
+                color: white;
+                border-radius: 6px;
+                padding: 4px 10px;
+                font-size: 12px;
+            }
+
+            QTableWidget QPushButton:hover {
+                background-color: #4A90E2;
+            }
+        """)
+
 
     

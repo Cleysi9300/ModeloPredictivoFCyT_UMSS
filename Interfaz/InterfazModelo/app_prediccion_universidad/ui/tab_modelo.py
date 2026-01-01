@@ -8,6 +8,8 @@ from PyQt6.QtWidgets import (
     QComboBox, QMessageBox, QFormLayout,
     QHBoxLayout, QFrame
 )
+from PyQt6.QtCore import Qt
+
 
 # ===============================
 # Etiquetas amigables
@@ -28,6 +30,7 @@ ETIQUETAS_COLUMNAS = {
     "MAYOR_EDAD": "Mayor de edad",
     "MIGRA_UNIVERSIDAD": "Migración universitaria previa",
 }
+
 NUMERICAS_MODELO = {
     "PERIODO",
     "OPC_INGRESO",
@@ -39,11 +42,12 @@ NUMERICAS_MODELO = {
     "TASA_APR_COLEGIO",
 }
 
+
 class TabModelo(QWidget):
     def __init__(self):
         super().__init__()
 
-        # Layout centrado
+        # Layout principal centrado
         self.main_layout = QHBoxLayout()
         self.card = QFrame()
         self.card.setObjectName("card")
@@ -63,75 +67,131 @@ class TabModelo(QWidget):
 
         # Info tasa colegio
         self.label_tasa_info = QLabel("Tasa de aprobación del colegio: ---")
+        self.label_tasa_info.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.layout.addWidget(self.label_tasa_info)
 
         # Botón
-        self.btn_predecir = QPushButton("Predecir Resultado")
+        self.btn_predecir = QPushButton("Evaluar Riesgo Académico")
         self.btn_predecir.clicked.connect(self.predecir)
         self.layout.addWidget(self.btn_predecir)
 
-        # Resultado
-        self.label_resultado = QLabel("Resultado: ---")
-        self.layout.addWidget(self.label_resultado)
+        # Resultado (centrado)
+        self.label_resultado = QLabel("Complete los datos y presione el botón")
+        self.label_resultado.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        resultado_layout = QHBoxLayout()
+        resultado_layout.addStretch()
+        resultado_layout.addWidget(self.label_resultado)
+        resultado_layout.addStretch()
+
+        self.layout.addLayout(resultado_layout)
 
         self.setLayout(self.main_layout)
         self.aplicar_estilos()
 
-
+    # ===============================
+    # Predicción
+    # ===============================
     def predecir(self):
         try:
             datos = {}
+
             for col, widget in self.inputs.items():
                 if widget.currentIndex() == -1:
-                    raise ValueError(f"Seleccione un valor para {col}")               
+                    raise ValueError(f"Seleccione un valor para {col}")
+
                 if col in ["MAYOR_EDAD", "MIGRA_UNIVERSIDAD"]:
                     datos[col] = int(widget.currentData())
                 elif col in NUMERICAS_MODELO:
                     datos[col] = float(widget.currentText())
                 else:
-                    datos[col] = widget.currentText()            
+                    datos[col] = widget.currentText()
+
+            # 🔴 DATOS EXTRA PARA PERFIL (NO VAN AL MODELO)
+            datos["NOMBRE_COLEGIO"] = self.combo_colegio.currentText()
             datos["TASA_APR_COLEGIO"] = float(self.tasa_actual)
-            # Construir DataFrame
+
             df = pd.DataFrame([datos])
-            df = df.reindex(columns=self.columnas_modelo, fill_value=0)            
+            df = df.reindex(columns=self.columnas_modelo, fill_value=0)
+
             pred = self.modelo.predict(df)[0]
             proba = self.modelo.predict_proba(df)[0][1]
-            self.mostrar_resultado(pred, proba)            
-            if hasattr(self, "tab_perfil") and hasattr(self, "tabs_widget"):
-                self.tab_perfil.actualizar_perfil(datos, proba)                
-                self.tabs_widget.setCurrentIndex(
-                    self.tabs_widget.indexOf(self.tab_perfil)
-                )
+
+            # ✅ ENVIAR AL PERFIL
+            self.tab_perfil.actualizar_perfil(datos, proba)
+
+            # 🔁 CAMBIAR DE PESTAÑA AUTOMÁTICAMENTE
+            self.tabs_widget.setCurrentIndex(
+                self.tabs_widget.indexOf(self.tab_perfil)
+            )
+
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
-    
+
+
+    # ===============================
+    # Mostrar resultado (RIESGO)
+    # ===============================
+    def mostrar_resultado(self, pred, proba):
+        if proba < 0.5:
+            estado = "EN RIESGO"
+            icono = "⚠️"
+            color = "#B02A37"
+            fondo = "#F8D7DA"
+        else:
+            estado = "FUERA DE RIESGO"
+            icono = "✅"
+            color = "#1E7E34"
+            fondo = "#D4EDDA"
+
+        texto = (
+            f"{icono} {estado}\n"
+            f"Probabilidad de aprobación: {proba:.2%}"
+        )
+
+        self.label_resultado.setText(texto)
+        self.label_resultado.setStyleSheet(f"""
+            QLabel {{
+                background-color: {fondo};
+                color: {color};
+                font-size: 20px;
+                font-weight: bold;
+                padding: 20px;
+                border-radius: 12px;
+                min-width: 380px;
+            }}
+        """)
+
+    # ===============================
     # Cargar modelo y datos
+    # ===============================
     def cargar_artifactos(self):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_path = os.path.join(base_dir, "data", "dataset_eda.csv")
+
         self.df_ref = pd.read_csv(data_path)
+
         self.tasa_por_colegio = (
             self.df_ref
             .groupby("NOMBRE_COLEGIO")["RESULTADO_FINAL"]
             .apply(lambda x: (x == "APR").mean())
             .to_dict()
         )
+
         self.modelo = joblib.load("model/modelo_XGBOOST.joblib")
+
         with open("model/columnas_modelo.pkl", "rb") as f:
             self.columnas_modelo = pickle.load(f)
+
         with open("model/cat_features.pkl", "rb") as f:
             self.cat_features = pickle.load(f)
+
         self.tasa_actual = 0.0
 
-    
-    
-    
-    
-    
+    # ===============================
     # Crear inputs
-    
+    # ===============================
     def crear_inputs(self):
-        
         combo_colegio = QComboBox()
         colegios = sorted(
             self.df_ref["NOMBRE_COLEGIO"]
@@ -145,53 +205,29 @@ class TabModelo(QWidget):
         combo_colegio.currentTextChanged.connect(self.actualizar_tasa_colegio)
 
         self.form.addRow(QLabel("Nombre del colegio"), combo_colegio)
-        self.combo_colegio = combo_colegio  # no va al modelo
+        self.combo_colegio = combo_colegio
 
-        # Variables reales del modelo
         for col in self.columnas_modelo:
-            # VARIABLES QUE NO SE MUESTRAN
-            if col in ["RESULTADO_FINAL", "AREA_CARRERA"]:
+            if col in ["RESULTADO_FINAL", "AREA_CARRERA", "TASA_APR_COLEGIO"]:
                 continue
-
-            
-        # VARIABLES QUE NO SE MUESTRAN
-            if col in ["RESULTADO_FINAL", "AREA_CARRERA"]:
-                continue
-
-            if col == "TASA_APR_COLEGIO":
-                continue  
 
             label = ETIQUETAS_COLUMNAS.get(col, col)
 
+            combo = QComboBox()
+
             if col == "ANIO_BACHILLERATO":
-                combo = QComboBox()
                 combo.addItems([str(a) for a in range(1995, 2011)])
-                combo.setCurrentIndex(-1)
-            
             elif col == "EDAD":
-                combo = QComboBox()
                 combo.addItems([str(e) for e in range(15, 43)])
-                combo.setCurrentIndex(-1)
-
             elif col == "ANIOS_POST_BACH":
-                combo = QComboBox()
                 combo.addItems(["0", "1", "2", "3", "4", "5"])
-                combo.setCurrentIndex(-1)
-
             elif col == "MAYOR_EDAD":
-                combo = QComboBox()
                 combo.addItem("No", 0)
                 combo.addItem("Sí", 1)
-                combo.setCurrentIndex(-1)
-
             elif col == "MIGRA_UNIVERSIDAD":
-                combo = QComboBox()
                 combo.addItem("No", 0)
                 combo.addItem("Sí", 1)
-                combo.setCurrentIndex(-1)
-
             else:
-                combo = QComboBox()
                 valores = (
                     self.df_ref[col]
                     .dropna()
@@ -201,14 +237,14 @@ class TabModelo(QWidget):
                     .tolist()
                 )
                 combo.addItems(valores)
-                combo.setCurrentIndex(-1)
 
+            combo.setCurrentIndex(-1)
             self.form.addRow(QLabel(label), combo)
             self.inputs[col] = combo
 
-    
-    # Actualizar tasa
-    
+    # ===============================
+    # Actualizar tasa colegio
+    # ===============================
     def actualizar_tasa_colegio(self, nombre):
         tasa = self.tasa_por_colegio.get(nombre)
         if tasa is not None:
@@ -222,45 +258,16 @@ class TabModelo(QWidget):
                 "Tasa de aprobación del colegio: No disponible"
             )
 
-   
-    # Predicción
-   
-    
-
-    
-    # Mostrar resultado
-    
-    def mostrar_resultado(self, pred, proba):
-        if pred == 1:
-            texto = "APROBADO ✅"
-            color = "#1E7E34"
-        else:
-            texto = "NO APROBADO ❌"
-            color = "#B02A37"
-
-        texto += f"  (Probabilidad: {proba:.2%})"
-
-        self.label_resultado.setText(texto)
-        self.label_resultado.setStyleSheet(
-            f"""
-            background-color: #f4f6f8;
-            color: {color};
-            font-size: 16px;
-            font-weight: bold;
-            padding: 12px;
-            border-radius: 8px;
-            """
-        )
-
-    
+    # ===============================
     # Estilos
+    # ===============================
     def aplicar_estilos(self):
         self.setStyleSheet("""
             QFrame#card {
                 border: 2px solid #0B4F95;
                 border-radius: 14px;
                 padding: 24px;
-                min-width: 520px;
+                min-width: 540px;
             }
             QLabel {
                 color: #0B4F95;
@@ -277,8 +284,10 @@ class TabModelo(QWidget):
                 padding: 10px;
                 border-radius: 8px;
                 font-weight: bold;
+                font-size: 14px;
             }
         """)
+
     def set_tab_perfil(self, tab_perfil, tab_widget):
         self.tab_perfil = tab_perfil
-        self.tab_widget = tab_widget
+        self.tabs_widget = tab_widget
