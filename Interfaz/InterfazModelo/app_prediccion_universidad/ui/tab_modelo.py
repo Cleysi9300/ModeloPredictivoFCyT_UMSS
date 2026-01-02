@@ -71,7 +71,7 @@ class TabModelo(QWidget):
         self.layout.addWidget(self.label_tasa_info)
 
         # Botón
-        self.btn_predecir = QPushButton("Evaluar Riesgo Académico")
+        self.btn_predecir = QPushButton("Predecir Resultado")
         self.btn_predecir.clicked.connect(self.predecir)
         self.layout.addWidget(self.btn_predecir)
 

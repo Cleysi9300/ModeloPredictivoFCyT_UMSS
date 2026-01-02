@@ -4,10 +4,11 @@ import pandas as pd
 import numpy as np
 
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QPushButton, QLabel,
+    QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel,
     QFileDialog, QMessageBox, QTableWidget,
     QTableWidgetItem, QFrame, QDialog, QFormLayout
 )
+
 from PyQt6.QtCore import Qt
 from ui.worker_evaluacion import WorkerEvaluacion
 
@@ -182,6 +183,7 @@ class TabEvaluarEsts(QWidget):
 
        # Tabla resumida
     def mostrar_resultados(self, df):
+        
         self.btn_cargar.setEnabled(True)
         self.df_resultados = df.reset_index(drop=True)
 
@@ -196,16 +198,16 @@ class TabEvaluarEsts(QWidget):
 
         for i, row in self.df_resultados.iterrows():
             for j, col in enumerate(columnas):
-
-                
-                if col == "Perfil":
+                                
+                if col == "PERFIL":
                     btn = QPushButton("Ver perfil")
                     btn.setStyleSheet("""
                         QPushButton {
                             background-color: #0B4F95;
                             color: white;
                             border-radius: 8px;
-                            padding: 6px 14px;
+                            padding: 14px 14p
+                            
                             font-weight: bold;
                             font-size: 12px;
                         }
@@ -215,6 +217,7 @@ class TabEvaluarEsts(QWidget):
                     """)
                     btn.clicked.connect(lambda _, idx=i: self.ver_perfil(idx))
                     self.tabla.setCellWidget(i, j, btn)
+                    self.tabla.setRowHeight(i, 44)
                     continue
 
                 # ---------------------------
@@ -227,8 +230,7 @@ class TabEvaluarEsts(QWidget):
                 item = QTableWidgetItem(str(valor))
                 item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
 
-                # Colorear predicción
-                # Colorear predicción (RIESGO)
+               
                 if col == "PREDICCION":
                     if valor == "FUERA DE RIESGO":
                         item.setForeground(Qt.GlobalColor.darkGreen)
@@ -239,63 +241,112 @@ class TabEvaluarEsts(QWidget):
                 self.tabla.setItem(i, j, item)
 
         self.tabla.resizeColumnsToContents()
+        
+        col_perfil = columnas.index("PERFIL")
+        self.tabla.setColumnWidth(col_perfil, 120)
     
     # Perfil individual
-    
     def ver_perfil(self, idx):
         fila = self.df_resultados.iloc[idx]
 
         dialog = QDialog(self)
         dialog.setWindowTitle("Perfil del Postulante")
-        dialog.resize(600, 500)
+        dialog.resize(520, 600)
 
-        ly = QVBoxLayout(dialog)
-        form = QFormLayout()
+        layout = QVBoxLayout(dialog)
+        layout.setSpacing(16)
 
-        for col, etiqueta in ETIQUETAS.items():
-            if col in fila:
-                valor = fila[col]
-                if col == "PROBABILIDAD":
-                    valor = f"{valor:.2%}"
-                form.addRow(QLabel(etiqueta), QLabel(str(valor)))
+        # ===============================
+        # ENCABEZADO – RESULTADO
+        # ===============================
+        prob = fila.get("PROBABILIDAD", 0)
+        riesgo = fila.get("PREDICCION", "")
 
-        ly.addLayout(form)
-        dialog.exec()
-    
-    # Estilos
-    
-        self.setStyleSheet("""
-            QFrame#card {
-                background-color: #FFFFFF;
-                border: 2px solid #0B4F95;
-                border-radius: 14px;
-                padding: 20px;
-            }
+        if riesgo == "FUERA DE RIESGO":
+            color = "#1E7E34"
+            fondo = "#D4EDDA"
+            icono = "✅"
+        else:
+            color = "#B02A37"
+            fondo = "#F8D7DA"
+            icono = "⚠️"
 
-            QPushButton {
-                background-color: #0B4F95;
-                color: white;
-                border-radius: 8px;
-                padding: 6px 12px;
-                font-weight: bold;
-            }
-
-            QPushButton:hover {
-                background-color: #4A90E2;
-            }
-
-            QTableWidget {
-                background-color: #FFFFFF;
-                gridline-color: #DDD;
-            }
-
-            QHeaderView::section {
-                background-color: #0B4F95;
-                color: white;
-                font-weight: bold;
-                padding: 6px;
-            }
+        header = QLabel(
+            f"{icono} {riesgo}\n"
+            f"Probabilidad estimada de aprobación: {prob:.2%}"
+        )
+        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        header.setStyleSheet(f"""
+            background-color: {fondo};
+            color: {color};
+            font-size: 16px;
+            font-weight: bold;
+            padding: 14px;
+            border-radius: 10px;
         """)
+        layout.addWidget(header)
+
+        # ===============================
+        # FUNCIÓN AUXILIAR PARA SECCIONES
+        # ===============================
+        def add_section(title):
+            lbl = QLabel(title)
+            lbl.setStyleSheet("""
+                font-size:15px;
+                font-weight:bold;
+                color:#0B4F95;
+                margin-top:10px;
+            """)
+            layout.addWidget(lbl)
+
+        def add_item(clave, valor):
+            row = QHBoxLayout()
+            lbl_k = QLabel(clave)
+            lbl_v = QLabel(str(valor))
+
+            lbl_k.setMinimumWidth(220)
+            lbl_v.setStyleSheet("font-weight:bold;")
+
+            row.addWidget(lbl_k)
+            row.addStretch()
+            row.addWidget(lbl_v)
+            layout.addLayout(row)
+
+        # ===============================
+        # DATOS ACADÉMICOS
+        # ===============================
+        add_section("Datos académicos")
+
+        add_item("Período académico", fila.get("PERIODO"))
+        add_item("Opción de ingreso", fila.get("OPC_INGRESO"))
+        add_item("Nombre del colegio", fila.get("NOMBRE_COLEGIO"))
+        add_item("Ciudad del colegio", fila.get("CIUDAD_COLEGIO"))
+        add_item("Provincia del colegio", fila.get("PROVINCIA_COLEGIO"))
+        add_item("Año de bachillerato", fila.get("ANIO_BACHILLERATO"))
+        add_item("Tipo de colegio", fila.get("TRABAJO_COLEGIO"))
+
+        # ===============================
+        # DATOS PERSONALES
+        # ===============================
+        add_section("Datos personales")
+
+        add_item("Género", fila.get("SEXO"))
+        add_item("Edad en el examen", fila.get("EDAD"))
+        add_item("Estado civil", fila.get("ESTADO_CIVIL"))
+        add_item("Nacionalidad", fila.get("NACIONALIDAD"))
+        add_item(
+            "Mayor de edad",
+            "Sí" if fila.get("MAYOR_EDAD") == 1 else "No"
+        )
+        add_item(
+            "Migración universitaria",
+            "Sí" if fila.get("MIGRA_UNIVERSIDAD") == 1 else "No"
+        )
+        add_item("Años post bachillerato", fila.get("ANIOS_POST_BACH"))
+
+        layout.addStretch()
+        dialog.exec()
+
     def mostrar_error(self, mensaje):
         self.btn_cargar.setEnabled(True)
         QMessageBox.critical(self, "Error", mensaje)

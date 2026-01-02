@@ -55,7 +55,7 @@ class WorkerEvaluacion(QThread):
             pred = self.modelo.predict(X)
             proba = self.modelo.predict_proba(X)[:, 1]
 
-            df["PREDICCION"] = np.where(pred == 1, "APROBADO", "NO APROBADO")
+            df["PREDICCION"] = np.where(pred == 1, "FUERA DE RIESGO", "EN RIESGO")
             df["PROBABILIDAD"] = proba
 
             self.terminado.emit(df)
