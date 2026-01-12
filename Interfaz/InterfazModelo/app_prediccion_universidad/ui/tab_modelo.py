@@ -194,27 +194,17 @@ class TabModelo(QWidget):
     def crear_inputs(self):
         combo_colegio = QComboBox()
         colegios = sorted(
-            self.df_ref["NOMBRE_COLEGIO"]
-            .dropna()
-            .astype(str)
-            .unique()
-            .tolist()
-        )
+            self.df_ref["NOMBRE_COLEGIO"].dropna().astype(str).unique().tolist())
         combo_colegio.addItems(colegios)
         combo_colegio.setCurrentIndex(-1)
         combo_colegio.currentTextChanged.connect(self.actualizar_tasa_colegio)
-
         self.form.addRow(QLabel("Nombre del colegio"), combo_colegio)
         self.combo_colegio = combo_colegio
-
         for col in self.columnas_modelo:
             if col in ["RESULTADO_FINAL", "AREA_CARRERA", "TASA_APR_COLEGIO"]:
                 continue
-
             label = ETIQUETAS_COLUMNAS.get(col, col)
-
             combo = QComboBox()
-
             if col == "ANIO_BACHILLERATO":
                 combo.addItems([str(a) for a in range(1995, 2011)])
             elif col == "EDAD":
@@ -228,16 +218,8 @@ class TabModelo(QWidget):
                 combo.addItem("No", 0)
                 combo.addItem("Sí", 1)
             else:
-                valores = (
-                    self.df_ref[col]
-                    .dropna()
-                    .astype(str)
-                    .sort_values()
-                    .unique()
-                    .tolist()
-                )
+                valores = (self.df_ref[col].dropna().astype(str).sort_values().unique().tolist())
                 combo.addItems(valores)
-
             combo.setCurrentIndex(-1)
             self.form.addRow(QLabel(label), combo)
             self.inputs[col] = combo

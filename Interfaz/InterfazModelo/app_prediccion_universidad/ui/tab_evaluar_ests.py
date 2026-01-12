@@ -95,28 +95,64 @@ class TabEvaluarEsts(QWidget):
     
     def cargar_excel(self):
         ruta, _ = QFileDialog.getOpenFileName(
-            self, "Seleccionar archivo Excel", "", "Excel (*.xlsx)"
-        )
-
+            self, "Seleccionar archivo Excel", "", "Excel (*.xlsx)"        )
         if not ruta:
             return
-
         self.btn_cargar.setEnabled(False)
         self.tabla.setRowCount(0)
-
         self.worker = WorkerEvaluacion(
-            ruta,
-            self.modelo,
-            self.columnas_modelo,
-            self.tasa_por_colegio
-        )
-
+            ruta,self.modelo,self.columnas_modelo,self.tasa_por_colegio)
         self.worker.terminado.connect(self.mostrar_resultados)
         self.worker.error.connect(self.mostrar_error)
         self.worker.start()
-
+        
+    def mostrar_resultados(self, df):        
+        self.btn_cargar.setEnabled(True)
+        self.df_resultados = df.reset_index(drop=True)
+        columnas = [
+            "SEXO", "EDAD", "NOMBRE_COLEGIO",
+            "PREDICCION", "PROBABILIDAD", "PERFIL"]
+        self.tabla.setRowCount(len(df))
+        self.tabla.setColumnCount(len(columnas))
+        self.tabla.setHorizontalHeaderLabels(columnas)
+        for i, row in self.df_resultados.iterrows():
+            for j, col in enumerate(columnas):                                
+                if col == "PERFIL":
+                    btn = QPushButton("Ver perfil")
+                    btn.setStyleSheet("""
+                        QPushButton {
+                            background-color: #0B4F95;
+                            color: white;
+                            border-radius: 8px;
+                            padding: 14px 14p
+                            
+                            font-weight: bold;
+                            font-size: 12px;
+                        }
+                        QPushButton:hover {
+                            background-color: #4A90E2;
+                        }
+                    """)
+                    btn.clicked.connect(lambda _, idx=i: self.ver_perfil(idx))
+                    self.tabla.setCellWidget(i, j, btn)
+                    self.tabla.setRowHeight(i, 44)
+                    continue
+                valor = row[col]
+                if col == "PROBABILIDAD":
+                    valor = f"{valor:.2%}"
+                item = QTableWidgetItem(str(valor))
+                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)              
+                if col == "PREDICCION":
+                    if valor == "FUERA DE RIESGO":
+                        item.setForeground(Qt.GlobalColor.darkGreen)
+                    else:
+                        item.setForeground(Qt.GlobalColor.red)
+                self.tabla.setItem(i, j, item)
+        self.tabla.resizeColumnsToContents()        
+        col_perfil = columnas.index("PERFIL")
+        self.tabla.setColumnWidth(col_perfil, 120)
+    
     # Preparar datos
-
     def preparar_datos(self, df):
 
         df["FECHA_NAC"] = pd.to_datetime(df["FECHA_NAC"], errors="coerce")
@@ -182,69 +218,7 @@ class TabEvaluarEsts(QWidget):
         self.mostrar_tabla(df)
 
        # Tabla resumida
-    def mostrar_resultados(self, df):
-        
-        self.btn_cargar.setEnabled(True)
-        self.df_resultados = df.reset_index(drop=True)
-
-        columnas = [
-            "SEXO", "EDAD", "NOMBRE_COLEGIO",
-            "PREDICCION", "PROBABILIDAD", "PERFIL"
-        ]
-
-        self.tabla.setRowCount(len(df))
-        self.tabla.setColumnCount(len(columnas))
-        self.tabla.setHorizontalHeaderLabels(columnas)
-
-        for i, row in self.df_resultados.iterrows():
-            for j, col in enumerate(columnas):
-                                
-                if col == "PERFIL":
-                    btn = QPushButton("Ver perfil")
-                    btn.setStyleSheet("""
-                        QPushButton {
-                            background-color: #0B4F95;
-                            color: white;
-                            border-radius: 8px;
-                            padding: 14px 14p
-                            
-                            font-weight: bold;
-                            font-size: 12px;
-                        }
-                        QPushButton:hover {
-                            background-color: #4A90E2;
-                        }
-                    """)
-                    btn.clicked.connect(lambda _, idx=i: self.ver_perfil(idx))
-                    self.tabla.setCellWidget(i, j, btn)
-                    self.tabla.setRowHeight(i, 44)
-                    continue
-
-                # ---------------------------
-                # DATOS NORMALES
-                # ---------------------------
-                valor = row[col]
-                if col == "PROBABILIDAD":
-                    valor = f"{valor:.2%}"
-
-                item = QTableWidgetItem(str(valor))
-                item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-
-               
-                if col == "PREDICCION":
-                    if valor == "FUERA DE RIESGO":
-                        item.setForeground(Qt.GlobalColor.darkGreen)
-                    else:
-                        item.setForeground(Qt.GlobalColor.red)
-
-
-                self.tabla.setItem(i, j, item)
-
-        self.tabla.resizeColumnsToContents()
-        
-        col_perfil = columnas.index("PERFIL")
-        self.tabla.setColumnWidth(col_perfil, 120)
-    
+   
     # Perfil individual
     def ver_perfil(self, idx):
         fila = self.df_resultados.iloc[idx]
