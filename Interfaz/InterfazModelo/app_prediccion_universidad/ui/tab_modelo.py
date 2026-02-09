@@ -2,6 +2,7 @@ import os
 import joblib
 import pickle
 import pandas as pd
+from datetime import datetime
 
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton,
@@ -10,10 +11,7 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
-
-# ===============================
 # Etiquetas amigables
-# ===============================
 ETIQUETAS_COLUMNAS = {
     "PERIODO": "Período de la gestión académica",
     "SEXO": "Género del postulante",
@@ -30,7 +28,6 @@ ETIQUETAS_COLUMNAS = {
     "MAYOR_EDAD": "Mayor de edad",
     "MIGRA_UNIVERSIDAD": "Migración universitaria previa",
 }
-
 NUMERICAS_MODELO = {
     "PERIODO",
     "OPC_INGRESO",
@@ -41,8 +38,6 @@ NUMERICAS_MODELO = {
     "MIGRA_UNIVERSIDAD",
     "TASA_APR_COLEGIO",
 }
-
-
 class TabModelo(QWidget):
     def __init__(self):
         super().__init__()
@@ -89,9 +84,7 @@ class TabModelo(QWidget):
         self.setLayout(self.main_layout)
         self.aplicar_estilos()
 
-    # ===============================
     # Predicción
-    # ===============================
     def predecir(self):
         try:
             datos = {}
@@ -107,7 +100,7 @@ class TabModelo(QWidget):
                 else:
                     datos[col] = widget.currentText()
 
-            # 🔴 DATOS EXTRA PARA PERFIL (NO VAN AL MODELO)
+            #  DATOS EXTRA PARA PERFIL (NO VAN AL MODELO)
             datos["NOMBRE_COLEGIO"] = self.combo_colegio.currentText()
             datos["TASA_APR_COLEGIO"] = float(self.tasa_actual)
 
@@ -117,10 +110,10 @@ class TabModelo(QWidget):
             pred = self.modelo.predict(df)[0]
             proba = self.modelo.predict_proba(df)[0][1]
 
-            # ✅ ENVIAR AL PERFIL
+            #  ENVIAR AL PERFIL
             self.tab_perfil.actualizar_perfil(datos, proba)
 
-            # 🔁 CAMBIAR DE PESTAÑA AUTOMÁTICAMENTE
+            #  CAMBIAR DE PESTAÑA AUTOMÁTICAMENTE
             self.tabs_widget.setCurrentIndex(
                 self.tabs_widget.indexOf(self.tab_perfil)
             )
@@ -128,10 +121,7 @@ class TabModelo(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", str(e))
 
-
-    # ===============================
     # Mostrar resultado (RIESGO)
-    # ===============================
     def mostrar_resultado(self, pred, proba):
         if proba < 0.5:
             estado = "EN RIESGO"
@@ -162,9 +152,7 @@ class TabModelo(QWidget):
             }}
         """)
 
-    # ===============================
     # Cargar modelo y datos
-    # ===============================
     def cargar_artifactos(self):
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_path = os.path.join(base_dir, "data", "dataset_eda.csv")
@@ -188,61 +176,75 @@ class TabModelo(QWidget):
 
         self.tasa_actual = 0.0
 
-    # ===============================
     # Crear inputs
-    # ===============================
     def crear_inputs(self):
         combo_colegio = QComboBox()
         colegios = sorted(
-            self.df_ref["NOMBRE_COLEGIO"].dropna().astype(str).unique().tolist())
+            self.df_ref["NOMBRE_COLEGIO"].dropna().astype(str).unique().tolist()
+        )
         combo_colegio.addItems(colegios)
         combo_colegio.setCurrentIndex(-1)
+
+        # Conectar después de asegurar que el método existe
         combo_colegio.currentTextChanged.connect(self.actualizar_tasa_colegio)
+
         self.form.addRow(QLabel("Nombre del colegio"), combo_colegio)
         self.combo_colegio = combo_colegio
+
+        anio_actual = datetime.now().year
+
         for col in self.columnas_modelo:
             if col in ["RESULTADO_FINAL", "AREA_CARRERA", "TASA_APR_COLEGIO"]:
                 continue
+
             label = ETIQUETAS_COLUMNAS.get(col, col)
             combo = QComboBox()
+
             if col == "ANIO_BACHILLERATO":
-                combo.addItems([str(a) for a in range(1995, 2011)])
+                combo.addItems([str(a) for a in range(1995, anio_actual + 1)])
+
             elif col == "EDAD":
-                combo.addItems([str(e) for e in range(15, 43)])
+                combo.addItems([str(e) for e in range(15, 45)])
+
             elif col == "ANIOS_POST_BACH":
-                combo.addItems(["0", "1", "2", "3", "4", "5"])
+                combo.addItems([str(a) for a in range(0, 10)])
+
             elif col == "MAYOR_EDAD":
                 combo.addItem("No", 0)
                 combo.addItem("Sí", 1)
+
             elif col == "MIGRA_UNIVERSIDAD":
                 combo.addItem("No", 0)
                 combo.addItem("Sí", 1)
+
             else:
-                valores = (self.df_ref[col].dropna().astype(str).sort_values().unique().tolist())
+                valores = (
+                    self.df_ref[col]
+                    .dropna()
+                    .astype(str)
+                    .sort_values()
+                    .unique()
+                    .tolist()
+                )
                 combo.addItems(valores)
+
             combo.setCurrentIndex(-1)
             self.form.addRow(QLabel(label), combo)
             self.inputs[col] = combo
 
-    # ===============================
-    # Actualizar tasa colegio
-    # ===============================
-    def actualizar_tasa_colegio(self, nombre):
-        tasa = self.tasa_por_colegio.get(nombre)
-        if tasa is not None:
-            self.tasa_actual = float(tasa)
-            self.label_tasa_info.setText(
-                f"Tasa de aprobación del colegio: {self.tasa_actual:.2%}"
-            )
-        else:
+    def actualizar_tasa_colegio(self, nombre_colegio: str):
+        if not nombre_colegio:
             self.tasa_actual = 0.0
-            self.label_tasa_info.setText(
-                "Tasa de aprobación del colegio: No disponible"
-            )
+            self.label_tasa_info.setText("Tasa de aprobación del colegio: ---")
+            return
 
-    # ===============================
+        self.tasa_actual = float(self.tasa_por_colegio.get(nombre_colegio, 0.0))
+        self.label_tasa_info.setText(
+            f"Tasa de aprobación del colegio: {self.tasa_actual:.2%}"
+        )
+
+
     # Estilos
-    # ===============================
     def aplicar_estilos(self):
         self.setStyleSheet("""
             QFrame#card {

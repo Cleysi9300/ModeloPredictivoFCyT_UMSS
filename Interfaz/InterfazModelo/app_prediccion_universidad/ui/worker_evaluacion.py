@@ -45,19 +45,15 @@ class WorkerEvaluacion(QThread):
                 df["NOMBRE_COLEGIO"]
                 .map(self.tasa_por_colegio)
                 .fillna(0.0)
-            )
-
+            )            
             
-            # Predicción
-            
+            # Predicción      
+                  
             X = df.reindex(columns=self.columnas_modelo, fill_value=0)
-
             pred = self.modelo.predict(X)
             proba = self.modelo.predict_proba(X)[:, 1]
-
             df["PREDICCION"] = np.where(pred == 1, "FUERA DE RIESGO", "EN RIESGO")
             df["PROBABILIDAD"] = proba
-
             self.terminado.emit(df)
 
         except Exception as e:

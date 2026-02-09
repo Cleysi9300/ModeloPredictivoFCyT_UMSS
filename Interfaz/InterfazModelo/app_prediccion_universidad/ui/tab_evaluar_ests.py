@@ -14,9 +14,8 @@ from ui.worker_evaluacion import WorkerEvaluacion
 
 
 
-# ==========================================
 # Etiquetas académicas
-# ==========================================
+
 ETIQUETAS = {
     "PERIODO": "Período académico",
     "SEXO": "Género",
@@ -79,7 +78,7 @@ class TabEvaluarEsts(QWidget):
         self.df_hist = pd.read_csv(
             os.path.join(base_dir, "data", "dataset_eda.csv")
         )
-
+        
         self.tasa_por_colegio = (
             self.df_hist
             .groupby("NOMBRE_COLEGIO")["RESULTADO_FINAL"]
@@ -88,7 +87,6 @@ class TabEvaluarEsts(QWidget):
         )
        
         self.df_resultados = None
-
         self.aplicar_estilos()
     
     # Cargar Excel
@@ -156,7 +154,6 @@ class TabEvaluarEsts(QWidget):
     def preparar_datos(self, df):
 
         df["FECHA_NAC"] = pd.to_datetime(df["FECHA_NAC"], errors="coerce")
-
       
         df["EDAD"] = df.apply(
             lambda fila: fila["ANIO"] - fila["FECHA_NAC"].year
@@ -207,13 +204,10 @@ class TabEvaluarEsts(QWidget):
     
     def predecir(self, df):
         X = df.reindex(columns=self.columnas_modelo, fill_value=0)
-
         pred = self.modelo.predict(X)
         proba = self.modelo.predict_proba(X)[:, 1]
-
         df["PREDICCION"] = np.where(pred == 1, "FUERA DE RIESGO","EN RIESGO")
         df["PROBABILIDAD"] = proba
-
         self.df_resultados = df
         self.mostrar_tabla(df)
 
@@ -222,17 +216,15 @@ class TabEvaluarEsts(QWidget):
     # Perfil individual
     def ver_perfil(self, idx):
         fila = self.df_resultados.iloc[idx]
-
         dialog = QDialog(self)
         dialog.setWindowTitle("Perfil del Postulante")
         dialog.resize(520, 600)
-
         layout = QVBoxLayout(dialog)
         layout.setSpacing(16)
 
-        # ===============================
+        
         # ENCABEZADO – RESULTADO
-        # ===============================
+       
         prob = fila.get("PROBABILIDAD", 0)
         riesgo = fila.get("PREDICCION", "")
 
@@ -260,9 +252,7 @@ class TabEvaluarEsts(QWidget):
         """)
         layout.addWidget(header)
 
-        # ===============================
         # FUNCIÓN AUXILIAR PARA SECCIONES
-        # ===============================
         def add_section(title):
             lbl = QLabel(title)
             lbl.setStyleSheet("""
@@ -285,12 +275,9 @@ class TabEvaluarEsts(QWidget):
             row.addStretch()
             row.addWidget(lbl_v)
             layout.addLayout(row)
-
-        # ===============================
+       
         # DATOS ACADÉMICOS
-        # ===============================
         add_section("Datos académicos")
-
         add_item("Período académico", fila.get("PERIODO"))
         add_item("Opción de ingreso", fila.get("OPC_INGRESO"))
         add_item("Nombre del colegio", fila.get("NOMBRE_COLEGIO"))
@@ -299,11 +286,8 @@ class TabEvaluarEsts(QWidget):
         add_item("Año de bachillerato", fila.get("ANIO_BACHILLERATO"))
         add_item("Tipo de colegio", fila.get("TRABAJO_COLEGIO"))
 
-        # ===============================
         # DATOS PERSONALES
-        # ===============================
         add_section("Datos personales")
-
         add_item("Género", fila.get("SEXO"))
         add_item("Edad en el examen", fila.get("EDAD"))
         add_item("Estado civil", fila.get("ESTADO_CIVIL"))
@@ -327,7 +311,7 @@ class TabEvaluarEsts(QWidget):
     def aplicar_estilos(self):
         self.setStyleSheet("""
             /* ===============================
-            CARD PRINCIPAL
+             PRINCIPAL
             =============================== */
             QFrame#card {
                 background-color: #FFFFFF;
@@ -365,9 +349,9 @@ class TabEvaluarEsts(QWidget):
                 color: #EAEAEA;
             }
 
-            /* ===============================
+            /* 
             TABLA
-            =============================== */
+             */
             QTableWidget {
                 background-color: #FFFFFF;
                 border: 1px solid #DADADA;
@@ -387,9 +371,9 @@ class TabEvaluarEsts(QWidget):
                 color: #000000;
             }
 
-            /* ===============================
+            /* 
             CABECERAS DE TABLA
-            =============================== */
+             */
             QHeaderView::section {
                 background-color: #F0F4F8;
                 color: #0B4F95;
@@ -407,9 +391,9 @@ class TabEvaluarEsts(QWidget):
                 border-top-right-radius: 8px;
             }
 
-            /* ===============================
+            /* 
             BOTÓN "VER PERFIL" EN TABLA
-            =============================== */
+             */
             QTableWidget QPushButton {
                 background-color: #0B4F95;
                 color: white;

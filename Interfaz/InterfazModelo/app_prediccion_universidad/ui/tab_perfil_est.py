@@ -19,14 +19,12 @@ NUMERICAS_MODELO = {
     "TASA_APR_COLEGIO",
 }
 
-
 class TabPerfilEst(QWidget):
     def __init__(self):
         super().__init__()
 
-        # ===============================
         # Cargar dataset histórico
-        # ===============================
+
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         data_path = os.path.join(base_dir, "data", "dataset_eda.csv")
         self.df = pd.read_csv(data_path)
@@ -42,32 +40,27 @@ class TabPerfilEst(QWidget):
         self.datos_postulante = None
         self.probabilidad = None
 
-        # ===============================
         # Layout raíz
-        # ===============================
         root_layout = QVBoxLayout(self)
 
-        # ===============================
+
         # Scroll Area
-        # ===============================
+
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
 
         root_layout.addWidget(scroll)
 
-        # ===============================
         # Contenido dentro del scroll
-        # ===============================
         content = QWidget()
         scroll.setWidget(content)
 
         content_layout = QVBoxLayout(content)
         content_layout.setSpacing(16)
 
-        # ===============================
         # Título
-        # ===============================
+    
         titulo = QLabel("Perfil Estadístico del Postulante")
         titulo.setAlignment(Qt.AlignmentFlag.AlignCenter)
         titulo.setStyleSheet(
@@ -82,9 +75,8 @@ class TabPerfilEst(QWidget):
         subtitulo.setStyleSheet("color:#555; font-size:13px;")
         content_layout.addWidget(subtitulo)
 
-        # ===============================
         # Card principal
-        # ===============================
+
         self.card = QFrame()
         self.card.setObjectName("card")
 
@@ -96,17 +88,16 @@ class TabPerfilEst(QWidget):
 
         self.aplicar_estilos()
 
-    # ==================================================
+
     # Recibir datos desde el modelo
-    # ==================================================
+
     def actualizar_perfil(self, datos_postulante, probabilidad):
         self.datos_postulante = datos_postulante
         self.probabilidad = probabilidad
         self._calcular_estadisticas()
 
-    # ==================================================
     # Construcción del perfil
-    # ==================================================
+
     def _calcular_estadisticas(self):
         self._limpiar_card()
 
@@ -116,9 +107,8 @@ class TabPerfilEst(QWidget):
             except (TypeError, ValueError):
                 return "-"
 
-        # ===============================
         # Resumen de riesgo
-        # ===============================
+
         if self.probabilidad < 0.50:
             estado = "EN RIESGO"
             color = "#B02A37"
@@ -145,9 +135,8 @@ class TabPerfilEst(QWidget):
         """)
         self.card_layout.addWidget(resumen)
 
-        # ===============================
-        # Características del postulante (2 columnas)
-        # ===============================
+        # Características del postulante en 2 columnas
+    
         self._add_section("Características del postulante")
 
         grid = QGridLayout()
@@ -184,9 +173,7 @@ class TabPerfilEst(QWidget):
         self.card_layout.addLayout(grid)
         self.card_layout.addSpacing(10)
 
-        # ===============================
         # Comparación histórica
-        # ===============================
         self._add_section("Comparación con el comportamiento histórico")
 
         for col in NUMERICAS_MODELO:
@@ -201,9 +188,7 @@ class TabPerfilEst(QWidget):
 
             self._add_kv(self._nombre_legible(col), texto)
 
-    # ==================================================
     # Helpers UI
-    # ==================================================
     def _add_section(self, titulo):
         lbl = QLabel(titulo)
         lbl.setStyleSheet("""
@@ -248,9 +233,7 @@ class TabPerfilEst(QWidget):
             "TASA_APR_COLEGIO": "Tasa de aprobación del colegio",
         }.get(col, col)
 
-    # ==================================================
     # Estilos
-    # ==================================================
     def aplicar_estilos(self):
         self.setStyleSheet("""
             QFrame#card {
